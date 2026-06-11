@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에고그램 성격유형 설문</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Malgun Gothic',sans-serif;background:#f5f5f5;padding:20px}
+.container{max-width:780px;margin:0 auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+h1{font-size:18px;font-weight:bold;margin-bottom:6px}
+.desc{font-size:12px;color:#666;margin-bottom:16px;line-height:1.6}
+.name-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.name-row label{font-size:13px;color:#555;white-space:nowrap}
+.name-row input{border:1px solid #ccc;border-radius:4px;padding:5px 10px;font-size:13px;width:200px}
+.prog{font-size:12px;color:#888;margin-bottom:8px}
+.sec-title{font-size:14px;font-weight:bold;padding:6px 0 4px;border-bottom:1px solid #999;margin-bottom:0}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+thead th{font-size:11px;color:#555;font-weight:normal;padding:4px 2px;text-align:center;border:1px solid #999;background:#e8e8e8}
+thead th.th-q{text-align:left;padding-left:8px}
+thead th.th-n{width:28px}
+thead th.th-s{width:40px}
+tbody td{border:1px solid #999;padding:0;vertical-align:middle}
+td.num{font-size:11px;color:#777;text-align:right;padding-right:5px;width:28px;background:#f0f0f0}
+td.q-text{font-size:12px;color:#222;line-height:1.5;padding:4px 8px;background:#fff}
+td.g{background:#c8c8c8;width:40px;height:28px}
+td.w{background:#ffffff;width:40px;text-align:center}
+td.w input{
+  width:100%;height:28px;border:none;background:transparent;
+  text-align:center;font-size:14px;font-weight:bold;
+  color:#222;outline:none;cursor:text;
+}
+td.w input:focus{background:#e3f0ff}
+td.w input.filled{background:#d4edda;color:#155724}
+.btn-row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.btn{padding:9px 20px;border-radius:5px;border:1px solid #999;background:#fff;color:#222;font-size:14px;cursor:pointer;font-weight:bold}
+.btn:hover{background:#f0f0f0}
+.btn-submit{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.btn-submit:hover{background:#1557b0}
+.msg{font-size:13px}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:#fff;padding:28px 32px;border-radius:8px;text-align:center;max-width:320px}
+.modal p{font-size:15px;margin-bottom:16px;line-height:1.6}
+.modal .ok-btn{padding:8px 24px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>에고그램 성격유형 설문</h1>
+  <p class="desc">흰색 칸에만 0~3 숫자를 입력하세요 &nbsp;|&nbsp; 0=전혀 아니다 &nbsp; 1=가끔 그렇다 &nbsp; 2=자주 그렇다 &nbsp; 3=항상 그렇다</p>
+
+  <div class="name-row">
+    <label>이름</label>
+    <input type="text" id="uname" placeholder="이름 또는 식별코드" />
+  </div>
+  <p class="prog" id="prog">입력 완료: 0 / 50</p>
+
+  <div class="sec-title">#.1-1 &nbsp; 문항 1 ~ 25</div>
+  <table>
+    <thead><tr>
+      <th class="th-n"></th><th class="th-q">문항</th>
+      <th class="th-s">1</th><th class="th-s">2</th><th class="th-s">3</th><th class="th-s">4</th><th class="th-s">5</th>
+    </tr></thead>
+    <tbody id="tb1"></tbody>
+  </table>
+
+  <div class="sec-title">#.1-2 &nbsp; 문항 26 ~ 50</div>
+  <table>
+    <thead><tr>
+      <th class="th-n"></th><th class="th-q">문항</th>
+      <th class="th-s">1</th><th class="th-s">2</th><th class="th-s">3</th><th class="th-s">4</th><th class="th-s">5</th>
+    </tr></thead>
+    <tbody id="tb2"></tbody>
+  </table>
+
+  <div class="btn-row">
+    <button class="btn btn-submit" onclick="submitForm()">제출하기</button>
+    <span class="msg" id="msg"></span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <p id="modal-msg"></p>
+    <button class="ok-btn" onclick="closeModal()">확인</button>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxiG0OfaVOaGeS-NU57oIgIPtq46pZRMDOKKSCRtR7ZkG7Hu9tGboHbDR5dj_eWTJImIQ/exec';
+
+const qs=[
+  '자기의 손익을 생각하고 행동하는 편이다',
+  '자유롭게 행동하는 사람이라고 생각한다.',
+  '남의 말을 가로 막고 자기 생각을 말하는 일이 있다.',
+  '생각하고 있는 바를 말하지 못하는 성질이다.',
+  '다른 사람을 엄하게 비판하는 편이다.',
+  '다른 사람에 대해 헤아려 주는 바가 강하다.',
+  '상대방의 좋은 점을 잘 알아차리는 편이다.',
+  '대화중에 감정적으로 되는 일은 적다',
+  '호기심이 강한 편이다.',
+  '시간약속이나 돈문제를 소홀히 하는 것을 싫어한다.',
+  '사람들로부터 좋은 인상을 받고 싶어 한다.',
+  '남의 부탁이라면 거절하지 못하는 편이다.',
+  '양보심이 많으며 참는 편이다.',
+  '사회의 규칙, 윤리, 도덕 등을 중시한다.',
+  '사물을 분석적으로 깊게 생각한 다음에 결정한다.',
+  '싫은 일은 핑계를 달아 뒤로 미루는 경향이 있다.',
+  '아이들이나 남의 일을 돌보아 주는 것을 좋아한다.',
+  '자기생각을 주장하기 보다 타협하는 일이 많다.',
+  '감정보다는 이성적인 편이라고 생각한다.',
+  '예절이나 규범에 까다로운 편이다.',
+  '남의 의견은 찬반양론을 듣고 참고로 한다.',
+  '놀이나 음식 등을 만족할 때까지 찾는 편이다.',
+  '책임감을 남에게 강하게 요구한다.',
+  '타인에 대해 융통성이 있는 편이다.',
+  '남의 안색이나 말에 신경을 쓰게 된다.',
+  '괴로울 때는 참는 편이다.',
+  '"해야 한다, 하지 않으면 안 된다"와 같은 말을 자주 쓴다.',
+  '말하고자 하는 것을 서슴없이 말해 버리는 편이다.',
+  '작은 잘못이라도 흐지부지 지나치지 않는 편이다.',
+  '남의 기대에 어긋나지 않도록 노력을 많이 한다.',
+  '자기 감정을 억누르는 편이다.',
+  '원하는 것을 손에 넣지 않으면 못 배기는 편이다.',
+  '무슨 일이나 사실에 입각해서 판단한다.',
+  '"야, 멋있다, 우와"와 같은 감탄사를 자주 쓴다.',
+  '자신이 없고 열등감을 느낄 때가 많다.',
+  '여러 가지 책을 많이 읽는 편이다.',
+  '농담을 잘 하는 편이다.',
+  '화내는 일이 많은 편이다.',
+  '좋다, 나쁘다를 분명하게 말한다.',
+  '앞으로의 일을 냉정하게 생각하고 행동한다.',
+  '잘 모르는 것은 질문이나 상의해서 처리한다.',
+  '아이들이나 부하의 잘못에 대해 관대하다.',
+  '상대방의 말에 귀를 기울여 공감하는 편이다.',
+  '아이들이나 부하를 엄격히 교육시킨다.',
+  '흥에 겨우면 도에 지나친 행동을 할 때가 있다.',
+  '길을 물으면 친절히 가르쳐 준다.',
+  '감정이 풍부하고 눈물이 많은 편이다.',
+  '친구나 가족들에게 무엇이든 사주는 것을 좋아한다.',
+  '몸이 좋지 않을 때는 자중해서 무리를 하지 않는다.',
+  '동정심이 많다고 생각한다.'
+];
+
+const WHITE=[
+  3,4,1,5,1,2,2,3,4,1,5,2,5,1,3,5,2,5,3,1,3,4,1,2,5,
+  5,1,4,1,5,5,4,3,4,5,3,4,4,1,3,3,2,2,1,4,2,4,2,3,2
+];
+
+const answers={};
+
+function buildTable(tbodyId,start,end){
+  var tbody=document.getElementById(tbodyId);
+  for(var q=start;q<=end;q++){
+    var wCol=WHITE[q-1];
+    var tr=document.createElement('tr');
+    var cells='<td class="num">'+q+'</td><td class="q-text">'+qs[q-1]+'</td>';
+    for(var col=1;col<=5;col++){
+      if(col===wCol){
+        cells+='<td class="w"><input type="tel" inputmode="numeric" id="inp'+q+'" maxlength="1" oninput="onInput('+q+',this)" onkeydown="onKey(event,'+q+')" /></td>';
+      } else {
+        cells+='<td class="g"></td>';
+      }
+    }
+    tr.innerHTML=cells;
+    tbody.appendChild(tr);
+  }
+}
+
+function onInput(q,el){
+  var v=el.value.replace(/[^0-3]/g,'');
+  if(v.length>1) v=v.slice(-1);
+  el.value=v;
+  if(v===''){
+    delete answers[q];
+    el.classList.remove('filled');
+  } else {
+    answers[q]=parseInt(v);
+    el.classList.add('filled');
+    moveNext(q);
+  }
+  updateProg();
+}
+
+function onKey(e,q){
+  if(e.key==='Enter'||e.key==='ArrowDown'){e.preventDefault();moveNext(q);}
+  if(e.key==='ArrowUp'){e.preventDefault();movePrev(q);}
+}
+
+function moveNext(q){var n=document.getElementById('inp'+(q+1));if(n)n.focus();}
+function movePrev(q){var p=document.getElementById('inp'+(q-1));if(p)p.focus();}
+
+function updateProg(){
+  document.getElementById('prog').textContent='입력 완료: '+Object.keys(answers).length+' / 50';
+}
+
+function submitForm(){
+  var name=document.getElementById('uname').value.trim();
+  if(!name){
+    showModal('이름을 입력해주세요.');
+    return;
+  }
+  var unanswered=[];
+  for(var q=1;q<=50;q++) if(answers[q]===undefined) unanswered.push(q);
+  if(unanswered.length>0){
+    var preview=unanswered.slice(0,5).join(', ')+(unanswered.length>5?' 외 '+(unanswered.length-5)+'개':'');
+    showModal('미입력 문항이 있어요.\n('+preview+')');
+    return;
+  }
+  var total=0;
+  var ansArr=[];
+  for(var i=1;i<=50;i++){total+=answers[i];ansArr.push(answers[i]);}
+
+  var btn=document.querySelector('.btn-submit');
+  btn.disabled=true;
+  btn.textContent='제출 중...';
+
+  var payload={name:name, answers:ansArr, total:total};
+
+  fetch(SCRIPT_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(){
+    btn.disabled=false;
+    btn.textContent='제출하기';
+    showModal('제출 완료!\n응답해주셔서 감사합니다.');
+    // 폼 초기화
+    for(var q=1;q<=50;q++){
+      var el=document.getElementById('inp'+q);
+      if(el){el.value='';el.classList.remove('filled');}
+      delete answers[q];
+    }
+    document.getElementById('uname').value='';
+    updateProg();
+  }).catch(function(){
+    btn.disabled=false;
+    btn.textContent='제출하기';
+    showModal('제출 중 오류가 발생했어요.\n다시 시도해주세요.');
+  });
+}
+
+function showModal(msg){
+  document.getElementById('modal-msg').innerText=msg;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+buildTable('tb1',1,25);
+buildTable('tb2',26,50);
+</script>
+</body>
+</html>
